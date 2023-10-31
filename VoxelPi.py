@@ -64,7 +64,7 @@ def render(p, phi, height, horizon, scale_height, distance, screen_width, screen
 
 # Camera parameters
 camera_position = [400, 400]
-camera_height = 200
+camera_height = 10
 horizon_line = 100
 height_scale = 120
 max_distance = 400
