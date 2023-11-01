@@ -60,15 +60,15 @@ def render(p, phi, height, horizon, scale_height, distance, screen_width, screen
 
         # Go to next line and increase step size when you are far away
         z += dz
-        dz += 0.01
+        dz += 0.1
 
 # Camera parameters
 camera_position = [400, 400]
-camera_height = 10
+camera_height = 100
 horizon_line = 100
 height_scale = 120
 max_distance = 400
-rotation_angle = 0
+rotation_angle = 0.0
 movement_speed = 5
 rotation_speed = 0.06
 height_increment = 10
@@ -78,7 +78,11 @@ movement = {
     "up": False,
     "down": False,
     "left": False,
-    "right": False
+    "right": False,
+    "rotateL": False,
+    "rotateR": False,
+    "heightUp": False,
+    "heightDown": False
 } 
 
 running = True
@@ -97,14 +101,16 @@ while running:
                 movement["left"] = True
             elif event.key == pygame.K_d:
                 movement["right"] = True
-            elif event.key == pygame.K_SPACE:
-                camera_height += height_increment
-            
-            # Rotation keys
             elif event.key == pygame.K_q:
-                rotation_angle += rotation_speed
+                movement["rotateL"] = True
             elif event.key == pygame.K_e:
-                rotation_angle -= rotation_speed
+                movement["rotateR"] = True
+            elif event.key == pygame.K_y:
+                movement["heightUp"] = True
+            elif event.key == pygame.K_x:
+                movement["heightDown"] = True
+
+
         
         # Check for key releases to stop camera movement
         if event.type == pygame.KEYUP:
@@ -116,19 +122,48 @@ while running:
                 movement["left"] = False
             elif event.key == pygame.K_d:
                 movement["right"] = False
+            elif event.key == pygame.K_q:
+                movement["rotateL"] = False
+            elif event.key == pygame.K_e:
+                movement["rotateR"] = False
+            elif event.key == pygame.K_y:
+                movement["heightUp"] = False
+            elif event.key == pygame.K_x:
+                movement["heightDown"] = False
 
     screen.fill((0, 0, 0))  # Clear the screen
 
-      # Update camera position based on the movement state
+        # Update camera position based on the movement state and rotation angle
     if movement["up"]:
-        camera_position[1] -= movement_speed
+        camera_position[0] -= math.sin(rotation_angle) * movement_speed
+        camera_position[1] -= math.cos(rotation_angle) * movement_speed
     if movement["down"]:
-        camera_position[1] += movement_speed
+        camera_position[0] += math.sin(rotation_angle) * movement_speed
+        camera_position[1] += math.cos(rotation_angle) * movement_speed
     if movement["left"]:
-        camera_position[0] -= movement_speed
+        camera_position[0] -= math.cos(rotation_angle) * movement_speed
+        camera_position[1] += math.sin(rotation_angle) * movement_speed
     if movement["right"]:
-        camera_position[0] += movement_speed
+        camera_position[0] += math.cos(rotation_angle) * movement_speed
+        camera_position[1] -= math.sin(rotation_angle) * movement_speed
 
+
+    if movement["rotateL"]:
+        rotation_angle += rotation_speed
+    if movement["rotateR"]:
+        rotation_angle -= rotation_speed
+    if movement["heightUp"]:
+       camera_height += height_increment
+    if movement["heightDown"]:
+        camera_height -= height_increment
+
+    if rotation_angle < 0:
+        rotation_angle += 2 * math.pi
+    elif rotation_angle > 2 * math.pi:
+        rotation_angle -= 2 * math.pi
+
+
+       
     render(camera_position, rotation_angle, camera_height, horizon_line, height_scale, max_distance, screen_width, screen_height)
 
     pygame.display.update()  # Update the display
