@@ -7,5 +7,6 @@
 
 VoxelPi is an open-source Python project that lets you run a VoxelSpace engine on a Raspberry Pi. Based on this one [VoxelSpace](https://github.com/s-macke/VoxelSpace).
 
+<b>Already Done: </b> Gamepad Input, Graphics Setting ...
 
-<b>Current work: </b> Xbox One Controller Support, UI with Graphics Settings, Mouse Control . . . 
+<b>Current work: </b> UI with Graphics Settings, Mouse Control, Game Elements . . . 
