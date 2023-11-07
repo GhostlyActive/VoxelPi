@@ -8,6 +8,18 @@ color_map = Image.open("color_map.png").convert('RGB')
 
 # Initialize Pygame
 pygame.init()
+# Check for connected joysticks
+if pygame.joystick.get_count() > 0:
+    joystick = pygame.joystick.Joystick(0)
+    joystick.init()
+    print("Joystick detected:", joystick.get_name())
+else:
+    print("No joystick detected")
+
+Quality_High = 0.02
+Quality_Low = 0.1
+graphics_quality = Quality_High
+
 
 # Screen dimensions
 screen_width = 800
@@ -60,7 +72,7 @@ def render(p, phi, height, horizon, scale_height, distance, screen_width, screen
 
         # Go to next line and increase step size when you are far away
         z += dz
-        dz += 0.1
+        dz += graphics_quality
 
 # Camera parameters
 camera_position = [400, 400]
@@ -110,8 +122,45 @@ while running:
             elif event.key == pygame.K_x:
                 movement["heightDown"] = True
 
+        # Controller input down
+        if event.type == pygame.JOYBUTTONDOWN:
+            # xbox A Button
+            if event.button == 0:
+                movement["heightUp"] = True 
+            # xbox B Button
+            if event.button == 1:
+                movement["heightDown"] = True 
+            #Start
+            if event.button == 6:
+                #movement[""] = True
+                if(graphics_quality == Quality_Low):
+                    graphics_quality = Quality_High
+                    max_distance = 400
+                elif(graphics_quality == Quality_High):
+                    graphics_quality = Quality_Low
+                    max_distance = 300
 
-        
+            # DPadUp
+            if event.button == 11:
+                movement["up"] = True
+            # DPadDown
+            if event.button == 12:
+                movement["down"] = True
+            # DPadLeft
+            if event.button == 13:
+                movement["left"] = True 
+            # DPadRight
+            if event.button == 14:
+                movement["right"] = True    
+            # LB
+            if event.button == 9:
+                movement["rotateL"] = True
+            # LR
+            if event.button == 10:
+                movement["rotateR"] = True
+   
+
+
         # Check for key releases to stop camera movement
         if event.type == pygame.KEYUP:
             if event.key == pygame.K_w:
@@ -130,6 +179,33 @@ while running:
                 movement["heightUp"] = False
             elif event.key == pygame.K_x:
                 movement["heightDown"] = False
+
+        # Controller input up
+        if event.type == pygame.JOYBUTTONUP:
+            # xbox A Button
+            if event.button == 0:
+                movement["heightUp"] = False 
+            # xbox B Button
+            if event.button == 1:
+                movement["heightDown"] = False 
+             # DPadUp
+            if event.button == 11:
+                movement["up"] = False
+            # DPadDown
+            if event.button == 12:
+                movement["down"] = False 
+            # DPadLeft
+            if event.button == 13:
+                movement["left"] = False 
+            # DPadRight
+            if event.button == 14:
+                movement["right"] = False 
+            # LB
+            if event.button == 9:
+                movement["rotateL"] = False  
+            # LR
+            if event.button == 10:
+                movement["rotateR"] = False      
 
     screen.fill((0, 0, 0))  # Clear the screen
 
@@ -162,10 +238,11 @@ while running:
     elif rotation_angle > 2 * math.pi:
         rotation_angle -= 2 * math.pi
 
-
        
     render(camera_position, rotation_angle, camera_height, horizon_line, height_scale, max_distance, screen_width, screen_height)
 
     pygame.display.update()  # Update the display
+
+    print(pygame.joystick.get_count())
 
 pygame.quit()
