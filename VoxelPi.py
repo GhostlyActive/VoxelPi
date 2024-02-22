@@ -1,10 +1,14 @@
 import pygame
 from PIL import Image
 import math
+import numpy as np
 
+clock = pygame.time.Clock()
 # Load the height map and color map PNGs
-height_map = Image.open("height_map.png")
+height_map = Image.open("height_map.png").convert()
 color_map = Image.open("color_map.png").convert('RGB') 
+
+
 
 # Initialize Pygame
 pygame.init()
@@ -17,14 +21,17 @@ else:
     print("No joystick detected")
 
 Quality_High = 0.02
-Quality_Low = 0.1
+Quality_Low = 0.15
+line_step_Distance = 200
 graphics_quality = Quality_High
+
 
 
 # Screen dimensions
 screen_width = 800
 screen_height = 600
 screen = pygame.display.set_mode((screen_width, screen_height))
+
 
 # Function to render a vertical line on the screen
 def draw_vertical_line(x, ytop, ybottom, color):
@@ -53,9 +60,13 @@ def render(p, phi, height, horizon, scale_height, distance, screen_width, screen
         dx = (pright[0] - pleft[0]) / screen_width
         dy = (pright[1] - pleft[1]) / screen_width
 
-        for i in range(screen_width):
+        line_step = 1 if z < line_step_Distance else 2  # Change the threshold and step size as needed
+
+
+        for i in range(0, screen_width, line_step):
             # Check if the current position is within the bounds of the maps
             if 0 <= int(pleft[0]) < height_map.width and 0 <= int(pleft[1]) < height_map.height:
+                
                 height_pixel = height_map.getpixel((int(pleft[0]), int(pleft[1])))
 
                 color = color_map.getpixel((int(pleft[0]), int(pleft[1])))
@@ -67,8 +78,8 @@ def render(p, phi, height, horizon, scale_height, distance, screen_width, screen
                     draw_vertical_line(i, height_on_screen, ybuffer[i], color)
                     ybuffer[i] = height_on_screen
 
-            pleft[0] += dx
-            pleft[1] += dy
+            pleft[0] += dx * line_step
+            pleft[1] += dy * line_step
 
         # Go to next line and increase step size when you are far away
         z += dz
@@ -136,9 +147,11 @@ while running:
                 if(graphics_quality == Quality_Low):
                     graphics_quality = Quality_High
                     max_distance = 400
+                    line_step_Distance = 200
                 elif(graphics_quality == Quality_High):
                     graphics_quality = Quality_Low
                     max_distance = 300
+                    line_step_Distance = 150
 
             # DPadUp
             if event.button == 11:
@@ -241,8 +254,17 @@ while running:
        
     render(camera_position, rotation_angle, camera_height, horizon_line, height_scale, max_distance, screen_width, screen_height)
 
+    # Inside your game loop, after pygame.display.update()
     pygame.display.update()  # Update the display
 
-    print(pygame.joystick.get_count())
+   
+
+    # Calculate and print the FPS
+    fps = clock.get_fps()
+    print(f"FPS: {fps:.2f}")
+
+# Cap the frame rate (e.g., at 60 frames per second)
+    clock.tick(30)
+
 
 pygame.quit()
