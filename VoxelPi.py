@@ -22,7 +22,7 @@ else:
 
 Quality_High = 0.02
 Quality_Low = 0.15
-line_step_Distance = 200
+line_step_Distance = 250
 graphics_quality = Quality_High
 
 
@@ -60,7 +60,7 @@ def render(p, phi, height, horizon, scale_height, distance, screen_width, screen
         dx = (pright[0] - pleft[0]) / screen_width
         dy = (pright[1] - pleft[1]) / screen_width
 
-        line_step = 1 if z < line_step_Distance else 2  # Change the threshold and step size as needed
+        line_step = 1 if z < line_step_Distance else 3  # Change the threshold and step size as needed
 
 
         for i in range(0, screen_width, line_step):
@@ -73,7 +73,7 @@ def render(p, phi, height, horizon, scale_height, distance, screen_width, screen
                 if isinstance(color, int):
                     color = (color, color, color)
 
-                height_on_screen = (height - height_pixel) / z * scale_height + horizon
+                height_on_screen = (height - height_pixel) / z * height_scale + horizon
                 if height_on_screen < ybuffer[i]:
                     draw_vertical_line(i, height_on_screen, ybuffer[i], color)
                     ybuffer[i] = height_on_screen
@@ -86,11 +86,11 @@ def render(p, phi, height, horizon, scale_height, distance, screen_width, screen
         dz += graphics_quality
 
 # Camera parameters
-camera_position = [400, 400]
-camera_height = 100
-horizon_line = 100
-height_scale = 120
-max_distance = 400
+camera_position = [512, 800]
+camera_height = 78
+horizon_line = 70
+height_scale = 350
+max_distance = 600
 rotation_angle = 0.0
 movement_speed = 5
 rotation_speed = 0.06
@@ -146,12 +146,12 @@ while running:
                 #movement[""] = True
                 if(graphics_quality == Quality_Low):
                     graphics_quality = Quality_High
-                    max_distance = 400
-                    line_step_Distance = 200
+                    max_distance = 600
+                    line_step_Distance = 250
                 elif(graphics_quality == Quality_High):
                     graphics_quality = Quality_Low
-                    max_distance = 300
-                    line_step_Distance = 150
+                    max_distance = 400
+                    line_step_Distance = 200
 
             # DPadUp
             if event.button == 11:
