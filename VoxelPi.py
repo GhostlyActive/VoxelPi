@@ -114,7 +114,28 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 
-         # Check for key presses to move the camera
+         # Mouse movement event
+        if event.type == pygame.MOUSEMOTION and pygame.mouse.get_pressed()[0]:  # Check if left mouse button is pressed
+            x, y = event.rel  # Get the relative movement of the mouse
+            rotation_angle += x * -0.005  # Adjust the rotation angle based on mouse movement
+            camera_height += y * -0.2 
+
+
+        # Mouse button press event
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            if event.button == 1:  # Left mouse button
+                movement["up"] = True
+            elif event.button == 3:  # Right mouse button
+                movement["down"] = True
+
+        # Mouse button release event
+        if event.type == pygame.MOUSEBUTTONUP:
+            if event.button == 1:  # Left mouse button
+                movement["up"] = False
+            elif event.button == 3:  # Right mouse button
+                movement["down"] = False
+
+        # Check for key presses to move the camera
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_w:
                 movement["up"] = True
@@ -222,7 +243,7 @@ while running:
 
     screen.fill((0, 0, 0))  # Clear the screen
 
-        # Update camera position based on the movement state and rotation angle
+    # Update camera position based on the movement state and rotation angle
     if movement["up"]:
         camera_position[0] -= math.sin(rotation_angle) * movement_speed
         camera_position[1] -= math.cos(rotation_angle) * movement_speed
@@ -263,7 +284,7 @@ while running:
     fps = clock.get_fps()
     print(f"FPS: {fps:.2f}")
 
-# Cap the frame rate (e.g., at 60 frames per second)
+    # Cap the frame rate (e.g., at 30 frames per second)
     clock.tick(30)
 
 

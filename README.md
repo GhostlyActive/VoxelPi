@@ -7,6 +7,6 @@
 
 VoxelPi is an open-source Python project that lets you run a VoxelSpace engine on a Raspberry Pi. Based on this one [VoxelSpace](https://github.com/s-macke/VoxelSpace). But now with a Python and Pygame implementation.
 
-<b>Already Done: </b> Gamepad Input, Graphics Setting ...
+<b>Already Done: </b> Gamepad Input, Graphics Setting, Mouse Control ...
 
-<b>Current work: </b> UI with Graphics Settings, Mouse Control, Game Elements . . . 
+<b>Current work: </b> UI with Graphics Settings, Game Elements . . . 
