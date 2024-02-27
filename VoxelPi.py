@@ -165,143 +165,75 @@ def render(p, phi, height, horizon, scale_height, distance, screen_width, screen
 
 
 def handle_event(event):
-    # Handle the event here...
-    pass
+    global graphics_quality, rotation_angle, camera_height, max_distance, line_step_distance
 
-running = True
-while running:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-
-         # Mouse movement event
-        if event.type == pygame.MOUSEMOTION and pygame.mouse.get_pressed()[0]:  # Check if left mouse button is pressed
-            x, y = event.rel  # Get the relative movement of the mouse
-            rotation_angle += x * -0.005  # Adjust the rotation angle based on mouse movement
-            camera_height += y * -0.2 
-
-
-        # Mouse button press event
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            if event.button == 1:  # Left mouse button
-                movement["up"] = True
-            elif event.button == 3:  # Right mouse button
-                movement["down"] = True
-
-        # Mouse button release event
-        if event.type == pygame.MOUSEBUTTONUP:
-            if event.button == 1:  # Left mouse button
-                movement["up"] = False
-            elif event.button == 3:  # Right mouse button
-                movement["down"] = False
-
-        # Check for key presses to move the camera
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_w:
-                movement["up"] = True
-            elif event.key == pygame.K_s:
-                movement["down"] = True
-            elif event.key == pygame.K_a:
-                movement["left"] = True
-            elif event.key == pygame.K_d:
-                movement["right"] = True
-            elif event.key == pygame.K_q:
-                movement["rotateL"] = True
-            elif event.key == pygame.K_e:
-                movement["rotateR"] = True
-            elif event.key == pygame.K_y:
-                movement["heightUp"] = True
-            elif event.key == pygame.K_x:
-                movement["heightDown"] = True
-
-        # Controller input down
-        if event.type == pygame.JOYBUTTONDOWN:
-            # xbox A Button
-            if event.button == XBOX_A_BUTTON:
-                movement["heightUp"] = True 
-            # xbox B Button
-            if event.button == XBOX_B_BUTTON:
-                movement["heightDown"] = True 
-            #Start
-            if event.button == XBOX_START_BUTTON:
-                #movement[""] = True
-                if(graphics_quality == QUALITY_LOW):
-                    graphics_quality = QUALITY_HIGH
-                    max_distance = MAX_VIEW_DISTANCE
-                    line_step_Distance = MAX_LINE_STEP_DISTANCE
-                elif(graphics_quality == QUALITY_HIGH):
-                    graphics_quality = QUALITY_LOW
-                    max_distance = MAX_VIEW_DISTANCE
-                    line_step_Distance = MIN_LINE_STEP_DISTANCE
-
-            # DPadUp
-            if event.button == DPAD_UP:
-                movement["up"] = True
-            # DPadDown
-            if event.button == DPAD_DOWN:
-                movement["down"] = True
-            # DPadLeft
-            if event.button == DPAD_LEFT:
-                movement["left"] = True 
-            # DPadRight
-            if event.button == DPAD_RIGHT:
-                movement["right"] = True    
-            # LB
-            if event.button == LB_BUTTON:
-                movement["rotateL"] = True
-            # LR
-            if event.button == LR_BUTTON:
-                movement["rotateR"] = True
-   
+    # Mapping of keys/buttons to movement actions
+    action_map = {
+        pygame.K_w: ("up", pygame.KEYDOWN, pygame.KEYUP),
+        pygame.K_s: ("down", pygame.KEYDOWN, pygame.KEYUP),
+        pygame.K_a: ("left", pygame.KEYDOWN, pygame.KEYUP),
+        pygame.K_d: ("right", pygame.KEYDOWN, pygame.KEYUP),
+        pygame.K_q: ("rotateL", pygame.KEYDOWN, pygame.KEYUP),
+        pygame.K_e: ("rotateR", pygame.KEYDOWN, pygame.KEYUP),
+        pygame.K_y: ("heightUp", pygame.KEYDOWN, pygame.KEYUP),
+        pygame.K_x: ("heightDown", pygame.KEYDOWN, pygame.KEYUP),
+        XBOX_A_BUTTON: ("heightUp", pygame.JOYBUTTONDOWN, pygame.JOYBUTTONUP),
+        XBOX_B_BUTTON: ("heightDown", pygame.JOYBUTTONDOWN, pygame.JOYBUTTONUP),
+        DPAD_UP: ("up", pygame.JOYBUTTONDOWN, pygame.JOYBUTTONUP),
+        DPAD_DOWN: ("down", pygame.JOYBUTTONDOWN, pygame.JOYBUTTONUP),
+        DPAD_LEFT: ("left", pygame.JOYBUTTONDOWN, pygame.JOYBUTTONUP),
+        DPAD_RIGHT: ("right", pygame.JOYBUTTONDOWN, pygame.JOYBUTTONUP),
+        LB_BUTTON: ("rotateL", pygame.JOYBUTTONDOWN, pygame.JOYBUTTONUP),
+        LR_BUTTON: ("rotateR", pygame.JOYBUTTONDOWN, pygame.JOYBUTTONUP)
+    }
 
 
-        # Check for key releases to stop camera movement
-        if event.type == pygame.KEYUP:
-            if event.key == pygame.K_w:
-                movement["up"] = False
-            elif event.key == pygame.K_s:
-                movement["down"] = False
-            elif event.key == pygame.K_a:
-                movement["left"] = False
-            elif event.key == pygame.K_d:
-                movement["right"] = False
-            elif event.key == pygame.K_q:
-                movement["rotateL"] = False
-            elif event.key == pygame.K_e:
-                movement["rotateR"] = False
-            elif event.key == pygame.K_y:
-                movement["heightUp"] = False
-            elif event.key == pygame.K_x:
-                movement["heightDown"] = False
 
-        # Controller input up
-        if event.type == pygame.JOYBUTTONUP:
-            # xbox A Button
-            if event.button == XBOX_A_BUTTON:
-                movement["heightUp"] = False 
-            # xbox B Button
-            if event.button == XBOX_B_BUTTON:
-                movement["heightDown"] = False 
-             # DPadUp
-            if event.button == DPAD_UP:
-                movement["up"] = False
-            # DPadDown
-            if event.button == DPAD_DOWN:
-                movement["down"] = False 
-            # DPadLeft
-            if event.button == DPAD_LEFT:
-                movement["left"] = False 
-            # DPadRight
-            if event.button == DPAD_RIGHT:
-                movement["right"] = False 
-            # LB
-            if event.button == LB_BUTTON:
-                movement["rotateL"] = False  
-            # LR
-            if event.button == LR_BUTTON:
-                movement["rotateR"] = False      
+    # Mouse movement event
+    if event.type == pygame.MOUSEMOTION and pygame.mouse.get_pressed()[0]:
+        x, y = event.rel
+        rotation_angle += x * -0.005
+        camera_height += y * -0.2
 
-    screen.fill((0, 0, 0))  # Clear the screen
+    # Mouse button press event
+    if event.type == pygame.MOUSEBUTTONDOWN:
+        if event.button == 1:  # Left mouse button
+            movement["up"] = True
+        elif event.button == 3:  # Right mouse button
+            movement["down"] = True
+
+    # Mouse button release event
+    if event.type == pygame.MOUSEBUTTONUP:
+        if event.button == 1:  # Left mouse button
+            movement["up"] = False
+        elif event.button == 3:  # Right mouse button
+            movement["down"] = False
+
+    # Start button toggles graphics quality
+    if event.type == pygame.JOYBUTTONDOWN and event.button == XBOX_START_BUTTON:
+        if graphics_quality == QUALITY_LOW:
+            graphics_quality = QUALITY_HIGH
+            max_distance = MAX_VIEW_DISTANCE
+            line_step_distance = MAX_LINE_STEP_DISTANCE
+        elif graphics_quality == QUALITY_HIGH:
+            graphics_quality = QUALITY_LOW
+            max_distance = MIN_VIEW_DISTANCE
+            line_step_distance = MIN_LINE_STEP_DISTANCE
+
+ # Handle key/button presses and releases
+    for key, (action, press_event, release_event) in action_map.items():
+        if event.type in [pygame.KEYDOWN, pygame.KEYUP] and hasattr(event, 'key') and event.key == key:
+            movement[action] = event.type == pygame.KEYDOWN
+        elif event.type in [pygame.JOYBUTTONDOWN, pygame.JOYBUTTONUP] and hasattr(event, 'button') and event.button == key:
+            movement[action] = event.type == pygame.JOYBUTTONDOWN
+
+def update_camera_position():
+    global rotation_angle
+    global rotation_speed
+    global camera_height
+    global rotation_angle
+    global rotation_speed
+    global movement_speed
 
     # Update camera position based on the movement state and rotation angle
     if movement["up"]:
@@ -331,21 +263,33 @@ while running:
         rotation_angle += 2 * math.pi
     elif rotation_angle > 2 * math.pi:
         rotation_angle -= 2 * math.pi
+    pass
 
-       
-    render(camera_position, rotation_angle, camera_height, horizon_line, height_scale, max_distance, SCREEN_WIDTH, SCREEN_HEIGHT)
-
-    # Inside your game loop, after pygame.display.update()
-    pygame.display.update()  # Update the display
-
-   
-
-    # Calculate and print the FPS
+def display_fps():
     fps = clock.get_fps()
     print(f"FPS: {fps:.2f}")
+    pass
 
-    # Cap the frame rate (e.g., at 30 frames per second)
-    clock.tick(30)
 
+# Game loop
+running = True
+while running:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+        handle_event(event)
+
+   
+    screen.fill((0, 0, 0))  # Clear the screen
+
+    update_camera_position()
+
+    render(camera_position, rotation_angle, camera_height, horizon_line, height_scale, max_distance, SCREEN_WIDTH, SCREEN_HEIGHT)
+
+    pygame.display.update()  # Update the display
+
+    display_fps()
+
+    clock.tick(30)  # Cap the frame rate (e.g., at 30 frames per second)
 
 pygame.quit()
