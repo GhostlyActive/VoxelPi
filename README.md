@@ -1,11 +1,11 @@
 # VoxelPi
 
 <p align="center">
-  <img src="/Media/voxelpi.gif" width="600" alt="collage">
+  <img src="/Media/Voxelpi_Graphics.gif" width="600" alt="collage">
 </p>
 
 <p align="center">
-  <img src="/Media/Voxelpi_Graphics.gif" width="600" alt="collage">
+  <img src="/Media/voxelpi.gif" width="600" alt="collage">
 </p>
 
 
