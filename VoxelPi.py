@@ -3,15 +3,64 @@ from PIL import Image
 import math
 import numpy as np
 
-clock = pygame.time.Clock()
-# Load the height map and color map PNGs
-height_map = Image.open("height_map.png").convert()
-color_map = Image.open("color_map.png").convert('RGB') 
+# Constants screen and graphics
+QUALITY_HIGH = 0.02
+QUALITY_LOW = 0.15
+MIN_LINE_STEP_DISTANCE = 200
+MAX_LINE_STEP_DISTANCE = 250
+MAX_VIEW_DISTANCE = 600
+MIN_VIEW_DISTANCE = 400
+SCREEN_WIDTH = 800
+SCREEN_HEIGHT = 600
 
+# Constants for initial camera parameters
+INITIAL_CAMERA_POSITION = [512, 800]
+INITIAL_CAMERA_HEIGHT = 78
+INITIAL_HORIZON_LINE = 70
+INITIAL_HEIGHT_SCALE = 350
+INITIAL_MAX_DISTANCE = 600
+INITIAL_ROTATION_ANGLE = 0.0
+INITIAL_MOVEMENT_SPEED = 5
+INITIAL_ROTATION_SPEED = 0.06
+INITIAL_HEIGHT_INCREMENT = 10
 
+# Constants for button codes
+XBOX_A_BUTTON = 0
+XBOX_B_BUTTON = 1
+XBOX_START_BUTTON = 6
+DPAD_UP = 11
+DPAD_DOWN = 12
+DPAD_LEFT = 13
+DPAD_RIGHT = 14
+LB_BUTTON = 9
+LR_BUTTON = 10
+
+# Dictionary to keep track of the current movement state
+movement = {
+    "up": False,
+    "down": False,
+    "left": False,
+    "right": False,
+    "rotateL": False,
+    "rotateR": False,
+    "heightUp": False,
+    "heightDown": False
+} 
 
 # Initialize Pygame
 pygame.init()
+
+# Initialize clock
+clock = pygame.time.Clock()
+
+# Load the height map and color map PNGs
+try:
+    height_map = Image.open("height_map.png").convert()
+    color_map = Image.open("color_map.png").convert('RGB')
+except FileNotFoundError:
+    print("Error: height_map.png or color_map.png not found.")
+    exit(1)
+
 # Check for connected joysticks
 if pygame.joystick.get_count() > 0:
     joystick = pygame.joystick.Joystick(0)
@@ -20,24 +69,53 @@ if pygame.joystick.get_count() > 0:
 else:
     print("No joystick detected")
 
-Quality_High = 0.02
-Quality_Low = 0.15
-line_step_Distance = 250
-graphics_quality = Quality_High
+# Graphics settings
+graphics_quality = QUALITY_HIGH
+line_step_distance = MAX_LINE_STEP_DISTANCE
 
+# Camera parameters
+camera_position = INITIAL_CAMERA_POSITION
+camera_height = INITIAL_CAMERA_HEIGHT
+horizon_line = INITIAL_HORIZON_LINE
+height_scale = INITIAL_HEIGHT_SCALE
+max_distance = INITIAL_MAX_DISTANCE
+rotation_angle = INITIAL_ROTATION_ANGLE
+movement_speed = INITIAL_MOVEMENT_SPEED
+rotation_speed = INITIAL_ROTATION_SPEED
+height_increment = INITIAL_HEIGHT_INCREMENT
 
-
-# Screen dimensions
-screen_width = 800
-screen_height = 600
-screen = pygame.display.set_mode((screen_width, screen_height))
+# Screen setup
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 
 
 # Function to render a vertical line on the screen
 def draw_vertical_line(x, ytop, ybottom, color):
+    """
+    Draw a vertical line on the screen.
+
+    Parameters:
+    x (int): The x-coordinate of the line.
+    ytop (int): The y-coordinate of the top of the line.
+    ybottom (int): The y-coordinate of the bottom of the line.
+    color (tuple): The color of the line.
+    """
     pygame.draw.line(screen, color, (x, ytop), (x, ybottom))
 
+# Function for rendering 3D scene
 def render(p, phi, height, horizon, scale_height, distance, screen_width, screen_height):
+    """
+    Render the 3D scene.
+
+    Parameters:
+    camera_position (list): The camera position.
+    phi (float): The camera rotation angle.
+    height (int): The camera height.
+    horizon (int): The horizon line.
+    scale_height (int): The height scale.
+    distance (int): The maximum rendering distance.
+    screen_width (int): The screen width.
+    screen_height (int): The screen height.
+    """
     sinphi = math.sin(phi)
     cosphi = math.cos(phi)
 
@@ -60,7 +138,7 @@ def render(p, phi, height, horizon, scale_height, distance, screen_width, screen
         dx = (pright[0] - pleft[0]) / screen_width
         dy = (pright[1] - pleft[1]) / screen_width
 
-        line_step = 1 if z < line_step_Distance else 3  # Change the threshold and step size as needed
+        line_step = 1 if z < line_step_distance else 3  # Change the threshold and step size as needed
 
 
         for i in range(0, screen_width, line_step):
@@ -85,28 +163,10 @@ def render(p, phi, height, horizon, scale_height, distance, screen_width, screen
         z += dz
         dz += graphics_quality
 
-# Camera parameters
-camera_position = [512, 800]
-camera_height = 78
-horizon_line = 70
-height_scale = 350
-max_distance = 600
-rotation_angle = 0.0
-movement_speed = 5
-rotation_speed = 0.06
-height_increment = 10
 
-# Dictionary to keep track of the current movement state
-movement = {
-    "up": False,
-    "down": False,
-    "left": False,
-    "right": False,
-    "rotateL": False,
-    "rotateR": False,
-    "heightUp": False,
-    "heightDown": False
-} 
+def handle_event(event):
+    # Handle the event here...
+    pass
 
 running = True
 while running:
@@ -157,40 +217,40 @@ while running:
         # Controller input down
         if event.type == pygame.JOYBUTTONDOWN:
             # xbox A Button
-            if event.button == 0:
+            if event.button == XBOX_A_BUTTON:
                 movement["heightUp"] = True 
             # xbox B Button
-            if event.button == 1:
+            if event.button == XBOX_B_BUTTON:
                 movement["heightDown"] = True 
             #Start
-            if event.button == 6:
+            if event.button == XBOX_START_BUTTON:
                 #movement[""] = True
-                if(graphics_quality == Quality_Low):
-                    graphics_quality = Quality_High
-                    max_distance = 600
-                    line_step_Distance = 250
-                elif(graphics_quality == Quality_High):
-                    graphics_quality = Quality_Low
-                    max_distance = 400
-                    line_step_Distance = 200
+                if(graphics_quality == QUALITY_LOW):
+                    graphics_quality = QUALITY_HIGH
+                    max_distance = MAX_VIEW_DISTANCE
+                    line_step_Distance = MAX_LINE_STEP_DISTANCE
+                elif(graphics_quality == QUALITY_HIGH):
+                    graphics_quality = QUALITY_LOW
+                    max_distance = MAX_VIEW_DISTANCE
+                    line_step_Distance = MIN_LINE_STEP_DISTANCE
 
             # DPadUp
-            if event.button == 11:
+            if event.button == DPAD_UP:
                 movement["up"] = True
             # DPadDown
-            if event.button == 12:
+            if event.button == DPAD_DOWN:
                 movement["down"] = True
             # DPadLeft
-            if event.button == 13:
+            if event.button == DPAD_LEFT:
                 movement["left"] = True 
             # DPadRight
-            if event.button == 14:
+            if event.button == DPAD_RIGHT:
                 movement["right"] = True    
             # LB
-            if event.button == 9:
+            if event.button == LB_BUTTON:
                 movement["rotateL"] = True
             # LR
-            if event.button == 10:
+            if event.button == LR_BUTTON:
                 movement["rotateR"] = True
    
 
@@ -217,28 +277,28 @@ while running:
         # Controller input up
         if event.type == pygame.JOYBUTTONUP:
             # xbox A Button
-            if event.button == 0:
+            if event.button == XBOX_A_BUTTON:
                 movement["heightUp"] = False 
             # xbox B Button
-            if event.button == 1:
+            if event.button == XBOX_B_BUTTON:
                 movement["heightDown"] = False 
              # DPadUp
-            if event.button == 11:
+            if event.button == DPAD_UP:
                 movement["up"] = False
             # DPadDown
-            if event.button == 12:
+            if event.button == DPAD_DOWN:
                 movement["down"] = False 
             # DPadLeft
-            if event.button == 13:
+            if event.button == DPAD_LEFT:
                 movement["left"] = False 
             # DPadRight
-            if event.button == 14:
+            if event.button == DPAD_RIGHT:
                 movement["right"] = False 
             # LB
-            if event.button == 9:
+            if event.button == LB_BUTTON:
                 movement["rotateL"] = False  
             # LR
-            if event.button == 10:
+            if event.button == LR_BUTTON:
                 movement["rotateR"] = False      
 
     screen.fill((0, 0, 0))  # Clear the screen
@@ -273,7 +333,7 @@ while running:
         rotation_angle -= 2 * math.pi
 
        
-    render(camera_position, rotation_angle, camera_height, horizon_line, height_scale, max_distance, screen_width, screen_height)
+    render(camera_position, rotation_angle, camera_height, horizon_line, height_scale, max_distance, SCREEN_WIDTH, SCREEN_HEIGHT)
 
     # Inside your game loop, after pygame.display.update()
     pygame.display.update()  # Update the display
