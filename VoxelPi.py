@@ -28,12 +28,37 @@ VERTICAL_SENSITIVITY = 0.2
 LINE_STEP_SMALL = 1
 LINE_STEP_LARGE = 3
 
+# Constants for button codes
+XBOX_A_BUTTON = 0
+XBOX_B_BUTTON = 1
+XBOX_START_BUTTON = 6
+DPAD_UP = 11
+DPAD_DOWN = 12
+DPAD_LEFT = 13
+DPAD_RIGHT = 14
+LB_BUTTON = 9
+LR_BUTTON = 10
+
+# Dictionary to keep track of the current movement state
+movement = {
+    "up": False,
+    "down": False,
+    "left": False,
+    "right": False,
+    "rotateL": False,
+    "rotateR": False,
+    "heightUp": False,
+    "heightDown": False
+} 
+
 class Game:
     def __init__(self):
+        # Graphics settings
         self.graphics_quality = QUALITY_HIGH
         self.max_distance = MAX_VIEW_DISTANCE
         self.line_step_distance = MAX_LINE_STEP_DISTANCE
         self.camera = Camera(INITIAL_CAMERA_POSITION, INITIAL_CAMERA_HEIGHT, INITIAL_ROTATION_ANGLE, INITIAL_MOVEMENT_SPEED, INITIAL_ROTATION_SPEED, INITIAL_HEIGHT_INCREMENT, INITIAL_HORIZON_LINE, INITIAL_HEIGHT_SCALE, INITIAL_MAX_DISTANCE)
+
 
     def handle_event(self, event):
         # Mapping of keys/buttons to movement actions
@@ -78,6 +103,7 @@ class Game:
 
         # Start button toggles graphics quality
         if event.type == pygame.JOYBUTTONDOWN and event.button == XBOX_START_BUTTON:
+            print("Button pressed:", event.button)
             if self.graphics_quality == QUALITY_LOW:
                 self.graphics_quality = QUALITY_HIGH
                 self.max_distance = MAX_VIEW_DISTANCE
@@ -93,6 +119,12 @@ class Game:
                 self.camera.movement[action] = event.type == pygame.KEYDOWN
             elif event.type in [pygame.JOYBUTTONDOWN, pygame.JOYBUTTONUP] and hasattr(event, 'button') and event.button == key:
                 self.camera.movement[action] = event.type == pygame.JOYBUTTONDOWN
+
+
+    def display_fps(self):
+        fps = clock.get_fps()
+        print(f"FPS: {fps:.2f}")
+        
 
 
 class Camera:
@@ -122,88 +154,29 @@ class Camera:
         if self.movement["up"]:
             self.position[0] -= math.sin(self.rotation_angle) * self.movement_speed
             self.position[1] -= math.cos(self.rotation_angle) * self.movement_speed
-        if movement["down"]:
+        if self.movement["down"]:
             self.position[0] += math.sin(self.rotation_angle) * self.movement_speed
             self.position[1] += math.cos(self.rotation_angle) * self.movement_speed
-        if movement["left"]:
+        if self.movement["left"]:
             self.position[0] -= math.cos(self.rotation_angle) * self.movement_speed
             self.position[1] += math.sin(self.rotation_angle) * self.movement_speed
-        if movement["right"]:
+        if self.movement["right"]:
             self.position[0] += math.cos(self.rotation_angle) * self.movement_speed
             self.position[1] -= math.sin(self.rotation_angle) * self.movement_speed
 
-
-        if movement["rotateL"]:
+        if self.movement["rotateL"]:
             self.rotation_angle += self.rotation_speed
-        if movement["rotateR"]:
+        if self.movement["rotateR"]:
             self.rotation_angle -= self.rotation_speed
-        if movement["heightUp"]:
+        if self.movement["heightUp"]:
             self.height += self.height_increment
-        if movement["heightDown"]:
+        if self.movement["heightDown"]:
             self.height -= self.height_increment
 
         if self.rotation_angle < 0:
             self.rotation_angle += 2 * math.pi
         elif self.rotation_angle > 2 * math.pi:
             self.rotation_angle -= 2 * math.pi
-
-
-
-# Constants for button codes
-XBOX_A_BUTTON = 0
-XBOX_B_BUTTON = 1
-XBOX_START_BUTTON = 6
-DPAD_UP = 11
-DPAD_DOWN = 12
-DPAD_LEFT = 13
-DPAD_RIGHT = 14
-LB_BUTTON = 9
-LR_BUTTON = 10
-
-# Dictionary to keep track of the current movement state
-movement = {
-    "up": False,
-    "down": False,
-    "left": False,
-    "right": False,
-    "rotateL": False,
-    "rotateR": False,
-    "heightUp": False,
-    "heightDown": False
-} 
-
-# Initialize Pygame
-pygame.init()
-
-game = Game()
-
-# Initialize clock
-clock = pygame.time.Clock()
-
-# Load the height map and color map PNGs
-try:
-    height_map = Image.open("height_map.png").convert()
-    color_map = Image.open("color_map.png").convert('RGB')
-except FileNotFoundError:
-    print("Error: height_map.png or color_map.png not found.")
-    exit(1)
-
-# Check for connected joysticks
-if pygame.joystick.get_count() > 0:
-    joystick = pygame.joystick.Joystick(0)
-    joystick.init()
-    print("Joystick detected:", joystick.get_name())
-else:
-    print("No joystick detected")
-
-# Graphics settings
-graphics_quality = QUALITY_HIGH
-line_step_distance = MAX_LINE_STEP_DISTANCE
-
-
-
-# Screen setup
-screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 
 
 # Function to render a vertical line on the screen
@@ -256,7 +229,7 @@ def render(p, phi, height, horizon, scale_height, distance, screen_width, screen
         dx = (pright[0] - pleft[0]) / screen_width
         dy = (pright[1] - pleft[1]) / screen_width
 
-        line_step = LINE_STEP_SMALL if z < line_step_distance else LINE_STEP_LARGE  # Change the threshold and step size as needed
+        line_step = LINE_STEP_SMALL if z < game.line_step_distance else LINE_STEP_LARGE  # Change the threshold and step size as needed
 
 
         for i in range(0, screen_width, line_step):
@@ -279,15 +252,36 @@ def render(p, phi, height, horizon, scale_height, distance, screen_width, screen
 
         # Go to next line and increase step size when you are far away
         z += dz
-        dz += graphics_quality
+        dz += game.graphics_quality
 
 
 
-def display_fps():
-    fps = clock.get_fps()
-    print(f"FPS: {fps:.2f}")
-    pass
+# Initialize Pygame
+pygame.init()
 
+game = Game()
+
+# Initialize clock
+clock = pygame.time.Clock()
+
+# Load the height map and color map PNGs
+try:
+    height_map = Image.open("height_map.png").convert()
+    color_map = Image.open("color_map.png").convert('RGB')
+except FileNotFoundError:
+    print("Error: height_map.png or color_map.png not found.")
+    exit(1)
+
+# Check for connected joysticks
+if pygame.joystick.get_count() > 0:
+    joystick = pygame.joystick.Joystick(0)
+    joystick.init()
+    print("Joystick detected:", joystick.get_name())
+else:
+    print("No joystick detected")
+
+
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 
 # Game loop
 running = True
@@ -302,11 +296,11 @@ while running:
 
     game.camera.update_position()
 
-    render(game.camera.position, game.camera.rotation_angle, game.camera.height, game.camera.horizon_line, game.camera.height_scale, game.camera.max_distance, SCREEN_WIDTH, SCREEN_HEIGHT)
+    render(game.camera.position, game.camera.rotation_angle, game.camera.height, game.camera.horizon_line, game.camera.height_scale, game.max_distance, SCREEN_WIDTH, SCREEN_HEIGHT)
 
     pygame.display.update()  # Update the display
 
-    display_fps()
+    game.display_fps()
 
     clock.tick(30)  # Cap the frame rate (e.g., at 30 frames per second)
 
