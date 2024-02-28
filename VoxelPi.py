@@ -121,8 +121,86 @@ class Game:
                 self.camera.movement[action] = event.type == pygame.JOYBUTTONDOWN
 
 
+    # Function to render a vertical line on the screen
+    def draw_vertical_line(self,x, ytop, ybottom, color):
+        """
+        Draw a vertical line on the screen.
+
+        Parameters:
+        x (int): The x-coordinate of the line.
+        ytop (int): The y-coordinate of the top of the line.
+        ybottom (int): The y-coordinate of the bottom of the line.
+        color (tuple): The color of the line.
+        """
+        pygame.draw.line(engine.screen, color, (x, ytop), (x, ybottom))
+
+    
+    # Function for rendering 3D scene
+    def render(self, p, phi, height, horizon, scale_height, distance, screen_width, screen_height):
+        """
+        Render the 3D scene.
+
+        Parameters:
+        camera_position (list): The camera position.
+        phi (float): The camera rotation angle.
+        height (int): The camera height.
+        horizon (int): The horizon line.
+        scale_height (int): The height scale.
+        distance (int): The maximum rendering distance.
+        screen_width (int): The screen width.
+        screen_height (int): The screen height.
+        """
+        sinphi = math.sin(phi)
+        cosphi = math.cos(phi)
+
+        # Initialize visibility array. Y position for each column on screen
+        ybuffer = [screen_height] * screen_width
+
+        # Draw from front to the back (low z coordinate to high z coordinate)
+        dz = 1.
+        z = 1.
+        while z < distance:
+            pleft = [
+                (-cosphi * z - sinphi * z) + p[0],
+                (sinphi * z - cosphi * z) + p[1]
+            ]
+            pright = [
+                (cosphi * z - sinphi * z) + p[0],
+                (-sinphi * z - cosphi * z) + p[1]
+            ]
+
+            dx = (pright[0] - pleft[0]) / screen_width
+            dy = (pright[1] - pleft[1]) / screen_width
+
+            line_step = LINE_STEP_SMALL if z < self.line_step_distance else LINE_STEP_LARGE  # Change the threshold and step size as needed
+
+
+            for i in range(0, screen_width, line_step):
+                # Check if the current position is within the bounds of the maps
+                if 0 <= int(pleft[0]) < engine.height_map.width and 0 <= int(pleft[1]) < engine.height_map.height:
+                    
+                    height_pixel = engine.height_map.getpixel((int(pleft[0]), int(pleft[1])))
+
+                    color = engine.color_map.getpixel((int(pleft[0]), int(pleft[1])))
+                    if isinstance(color, int):
+                        color = (color, color, color)
+
+                    height_on_screen = (height - height_pixel) / z * scale_height + horizon
+                    if height_on_screen < ybuffer[i]:
+                        self.draw_vertical_line(i, height_on_screen, ybuffer[i], color)
+                        ybuffer[i] = height_on_screen
+
+                pleft[0] += dx * line_step
+                pleft[1] += dy * line_step
+
+            # Go to next line and increase step size when you are far away
+            z += dz
+            dz += self.graphics_quality
+
+
+
     def display_fps(self):
-        fps = clock.get_fps()
+        fps = engine.clock.get_fps()
         print(f"FPS: {fps:.2f}")
         
 
@@ -179,129 +257,52 @@ class Camera:
             self.rotation_angle -= 2 * math.pi
 
 
-# Function to render a vertical line on the screen
-def draw_vertical_line(x, ytop, ybottom, color):
-    """
-    Draw a vertical line on the screen.
+class GameEngine:
+    def __init__(self):
+        pygame.init()
+        self.game = Game()
+        self.clock = pygame.time.Clock()
+        self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+        self.running = True
 
-    Parameters:
-    x (int): The x-coordinate of the line.
-    ytop (int): The y-coordinate of the top of the line.
-    ybottom (int): The y-coordinate of the bottom of the line.
-    color (tuple): The color of the line.
-    """
-    pygame.draw.line(screen, color, (x, ytop), (x, ybottom))
+        # Load the height map and color map PNGs
+        try:
+            self.height_map = Image.open("height_map.png").convert()
+            self.color_map = Image.open("color_map.png").convert('RGB')
+        except FileNotFoundError:
+            print("Error: height_map.png or color_map.png not found.")
+            exit(1)
 
-# Function for rendering 3D scene
-def render(p, phi, height, horizon, scale_height, distance, screen_width, screen_height):
-    """
-    Render the 3D scene.
-
-    Parameters:
-    camera_position (list): The camera position.
-    phi (float): The camera rotation angle.
-    height (int): The camera height.
-    horizon (int): The horizon line.
-    scale_height (int): The height scale.
-    distance (int): The maximum rendering distance.
-    screen_width (int): The screen width.
-    screen_height (int): The screen height.
-    """
-    sinphi = math.sin(phi)
-    cosphi = math.cos(phi)
-
-    # Initialize visibility array. Y position for each column on screen
-    ybuffer = [screen_height] * screen_width
-
-    # Draw from front to the back (low z coordinate to high z coordinate)
-    dz = 1.
-    z = 1.
-    while z < distance:
-        pleft = [
-            (-cosphi * z - sinphi * z) + p[0],
-            (sinphi * z - cosphi * z) + p[1]
-        ]
-        pright = [
-            (cosphi * z - sinphi * z) + p[0],
-            (-sinphi * z - cosphi * z) + p[1]
-        ]
-
-        dx = (pright[0] - pleft[0]) / screen_width
-        dy = (pright[1] - pleft[1]) / screen_width
-
-        line_step = LINE_STEP_SMALL if z < game.line_step_distance else LINE_STEP_LARGE  # Change the threshold and step size as needed
+        # Check for connected joysticks
+        if pygame.joystick.get_count() > 0:
+            self.joystick = pygame.joystick.Joystick(0)
+            self.joystick.init()
+            print("Joystick detected:", self.joystick.get_name())
+        else:
+            print("No joystick detected")
 
 
-        for i in range(0, screen_width, line_step):
-            # Check if the current position is within the bounds of the maps
-            if 0 <= int(pleft[0]) < height_map.width and 0 <= int(pleft[1]) < height_map.height:
-                
-                height_pixel = height_map.getpixel((int(pleft[0]), int(pleft[1])))
+    def run(self):
+        while self.running:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    self.running = False
+                self.game.handle_event(event)
 
-                color = color_map.getpixel((int(pleft[0]), int(pleft[1])))
-                if isinstance(color, int):
-                    color = (color, color, color)
+            self.screen.fill((0, 0, 0))  # Clear the screen
 
-                height_on_screen = (height - height_pixel) / z * scale_height + horizon
-                if height_on_screen < ybuffer[i]:
-                    draw_vertical_line(i, height_on_screen, ybuffer[i], color)
-                    ybuffer[i] = height_on_screen
+            self.game.camera.update_position()
 
-            pleft[0] += dx * line_step
-            pleft[1] += dy * line_step
+            self.game.render(self.game.camera.position, self.game.camera.rotation_angle, self.game.camera.height, self.game.camera.horizon_line, self.game.camera.height_scale, self.game.max_distance, SCREEN_WIDTH, SCREEN_HEIGHT)
 
-        # Go to next line and increase step size when you are far away
-        z += dz
-        dz += game.graphics_quality
+            pygame.display.update()  # Update the display
 
+            self.game.display_fps()
 
+            self.clock.tick(30)  # Cap the frame rate (e.g., at 30 frames per second)
 
-# Initialize Pygame
-pygame.init()
+        pygame.quit()
 
-game = Game()
-
-# Initialize clock
-clock = pygame.time.Clock()
-
-# Load the height map and color map PNGs
-try:
-    height_map = Image.open("height_map.png").convert()
-    color_map = Image.open("color_map.png").convert('RGB')
-except FileNotFoundError:
-    print("Error: height_map.png or color_map.png not found.")
-    exit(1)
-
-# Check for connected joysticks
-if pygame.joystick.get_count() > 0:
-    joystick = pygame.joystick.Joystick(0)
-    joystick.init()
-    print("Joystick detected:", joystick.get_name())
-else:
-    print("No joystick detected")
-
-
-screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-
-# Game loop
-running = True
-while running:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-        game.handle_event(event)
-
-   
-    screen.fill((0, 0, 0))  # Clear the screen
-
-    game.camera.update_position()
-
-    render(game.camera.position, game.camera.rotation_angle, game.camera.height, game.camera.horizon_line, game.camera.height_scale, game.max_distance, SCREEN_WIDTH, SCREEN_HEIGHT)
-
-    pygame.display.update()  # Update the display
-
-    game.display_fps()
-
-    clock.tick(30)  # Cap the frame rate (e.g., at 30 frames per second)
-
-pygame.quit()
+# Initialize and run the game
+engine = GameEngine()
+engine.run()
